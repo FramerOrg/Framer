@@ -31,13 +31,13 @@ def logger(from_module: str, message: str, max_width: int = None):
 
     # if message only one line
     if "\n" not in message:
-        print(f"* From {from_module} At {current_time}: {message}")
+        print(f"* {from_module} ({current_time}) {message}")
         return
 
     # if message multiple lines
     if "\n" in message:
         message = format_with_wrap(message, width=max_width)
-        print(f"* From {from_module} At {current_time}:")
+        print(f"* {from_module} ({current_time})")
         print("|", "\n| ".join(message.split("\n")), "\n")
         return
 

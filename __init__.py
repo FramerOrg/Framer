@@ -38,11 +38,14 @@ def init(link_to=None, log_name="Framer", hook_error=False):
 
     except:
         init_logger(traceback.format_exc())
+        exit(1)
 
     # return framer
+    init_logger("Framer initialized!")
     if link_to is None:
         return framer
     else:
         for attr in dir(framer):
             if not attr.startswith("__"):
                 sys.modules[link_to].__dict__[attr] = getattr(framer, attr)
+        return
