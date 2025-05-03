@@ -5,7 +5,6 @@ def init(link_to=None, log_name="Framer", hook_error=False):
     import sys
     import types
     import functools
-    import traceback
 
     # local module import
     from . import helper
@@ -18,38 +17,35 @@ def init(link_to=None, log_name="Framer", hook_error=False):
     # temporary logger for init
     init_logger = functools.partial(framer.helper.logger, "Init")
 
-    # if enable error hook
-    if hook_error:
-        sys.excepthook = framer.helper.global_except_hook
+    # enable error hook
+    sys.excepthook = framer.helper.global_except_hook
 
-    try:
+    # load env
+    if os.path.exists("env.json"):
+        init_logger("Loading env.json...")
+        import json
 
-        # load env
-        if os.path.exists("env.json"):
-            init_logger("Loading env.json...")
-            import json
+        with open("./env.json", "r", encoding="UTF-8") as f:
+            env = json.load(f)
+        framer.env = types.SimpleNamespace()
+        for key, value in env.items():
+            init_logger(f"Setting {key} to {value}...")
+            setattr(framer.env, key, value)
 
-            with open("./env.json", "r", encoding="UTF-8") as f:
-                env = json.load(f)
-            framer.env = types.SimpleNamespace()
-            for key, value in env.items():
-                init_logger(f"Setting {key} to {value}...")
-                setattr(framer.env, key, value)
+    # check modules
+    init_logger("Checking modules...")
 
-        # check modules
-        init_logger("Checking modules...")
+    if framer.helper.no_framerpkg():
+        raise FileNotFoundError(
+            "No framerpkg.json found, please run `python3 -m Framer init` first."
+        )
 
-        if framer.helper.no_framerpkg():
-            raise FileNotFoundError(
-                "No framerpkg.json found, please run `python3 -m Framer init` first."
-            )
+    if framer.helper.no_framer_modules():
+        framer.helper.init_dir("./framer_modules")
 
-        if framer.helper.no_framer_modules():
-            framer.helper.init_dir("./framer_modules")
-
-    except:
-        init_logger(traceback.format_exc())
-        exit(1)
+    # if disable error hook
+    if not hook_error:
+        sys.excepthook = sys.__excepthook__
 
     # return framer
     init_logger("Framer initialized!")
