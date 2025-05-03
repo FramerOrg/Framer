@@ -36,6 +36,17 @@ def init(link_to=None, log_name="Framer", hook_error=False):
                 init_logger(f"Setting {key} to {value}...")
                 setattr(framer.env, key, value)
 
+        # check modules
+        init_logger("Checking modules...")
+
+        if framer.helper.no_framerpkg():
+            raise FileNotFoundError(
+                "No framerpkg.json found, please run `python3 -m Framer init` first."
+            )
+
+        if framer.helper.no_framer_modules():
+            framer.helper.init_dir("./framer_modules")
+
     except:
         init_logger(traceback.format_exc())
         exit(1)

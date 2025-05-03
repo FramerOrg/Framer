@@ -54,3 +54,28 @@ def global_except_hook(exc_type, exc_value, exc_traceback):
         "ErrHooker",
         "".join(traceback.format_exception(exc_type, exc_value, exc_traceback)),
     )
+
+
+def init_dir(path: str):
+    import shutil
+    import os
+
+    if os.path.exists(path):
+        shutil.rmtree(path)
+    os.mkdir(path)
+
+
+def no_framerpkg() -> bool:
+    import os
+
+    if not os.path.exists("./framerpkg.json") or not os.path.isfile("./framerpkg.json"):
+        return True
+    return False
+
+
+def no_framer_modules() -> bool:
+    import os
+
+    if not os.path.exists("./framer_modules") or not os.path.isdir("./framer_modules"):
+        return True
+    return False
