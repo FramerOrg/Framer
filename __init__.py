@@ -10,7 +10,7 @@ def init(link_to=None, log_name="Framer", hook_error=False):
     # local module import
     from . import helper
 
-    # create framer namespace
+    # create framer
     framer = types.SimpleNamespace()
     framer.helper = helper
     framer.logger = functools.partial(framer.helper.logger, log_name)
