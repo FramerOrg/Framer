@@ -28,6 +28,7 @@ def logger(from_module: str, message: str, max_width: int = None):
         max_width = get_terminal_width()
 
     current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+    message = str(message)
 
     # if message only one line
     if "\n" not in message:
@@ -45,10 +46,6 @@ def logger(from_module: str, message: str, max_width: int = None):
 def global_except_hook(exc_type, exc_value, exc_traceback):
     import sys
     import traceback
-
-    if issubclass(exc_type, KeyboardInterrupt):
-        sys.__excepthook__(exc_type, exc_value, exc_traceback)
-        return
 
     logger(
         "ErrHooker",
@@ -79,3 +76,17 @@ def no_framer_modules() -> bool:
     if not os.path.exists("./framer_modules") or not os.path.isdir("./framer_modules"):
         return True
     return False
+
+
+def load_env():
+    import json
+
+    with open("./env.json", "r", encoding="UTF-8") as f:
+        return json.load(f)
+
+
+def load_framerpkg():
+    import json
+
+    with open("./framerpkg.json", "r", encoding="UTF-8") as f:
+        return json.load(f)
