@@ -122,6 +122,19 @@ def init(link_to=None, log_name="Framer", hook_error=False):
                     )
                 )
 
+        # import module
+        init_logger(f"Importing module {m}...")
+        m_obj = __import__(m)
+
+        # import module main
+        if not hasattr(m_obj, "moduleMain"):
+            raise ImportError(f"Module {m} has no Entry Point: moduleMain")
+        module = m_obj.moduleMain(framer, functools.partial(framer.helper.logger, m))
+
+        # add module to framer
+        setattr(module, "moduleInfo", installed_modules_info[m])
+        setattr(framer, m, module)
+
     # if disable error hook
     if not hook_error:
         sys.excepthook = sys.__excepthook__
