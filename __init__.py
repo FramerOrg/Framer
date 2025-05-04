@@ -12,7 +12,6 @@ def init(link_to=None, log_name="Framer", hook_error=False):
     # create framer
     framer = types.SimpleNamespace()
     framer.helper = helper
-    framer.logger = functools.partial(framer.helper.logger, log_name)
 
     # temporary logger for init
     init_logger = functools.partial(framer.helper.logger, "Init")
@@ -138,6 +137,9 @@ def init(link_to=None, log_name="Framer", hook_error=False):
     # if disable error hook
     if not hook_error:
         sys.excepthook = sys.__excepthook__
+
+    # create main logger
+    framer.logger = functools.partial(framer.helper.logger, log_name)
 
     # return framer
     init_logger("Framer Init Complete!")
