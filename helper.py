@@ -28,7 +28,7 @@ def logger(from_module: str, message: str, max_width: int = None):
         max_width = get_terminal_width()
 
     current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-    message = str(message)
+    message = format_with_wrap(str(message), width=max_width)
 
     # if message only one line
     if "\n" not in message:
@@ -37,7 +37,6 @@ def logger(from_module: str, message: str, max_width: int = None):
 
     # if message multiple lines
     if "\n" in message:
-        message = format_with_wrap(message, width=max_width)
         print(f"* {from_module} ({current_time})")
         print("|", "\n| ".join(message.split("\n")), "\n")
         return
@@ -89,4 +88,13 @@ def load_framerpkg():
     import json
 
     with open("./framerpkg.json", "r", encoding="UTF-8") as f:
+        return json.load(f)
+
+
+def load_require(module_name: str):
+    import json
+
+    with open(
+        f"./framer_modules/{module_name}/require.json", "r", encoding="UTF-8"
+    ) as f:
         return json.load(f)

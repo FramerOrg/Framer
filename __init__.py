@@ -45,7 +45,7 @@ def init(link_to=None, log_name="Framer", hook_error=False):
 
     if framer.helper.no_framer_modules():
         framer.helper.init_dir("./framer_modules")
-        sys.path.append("./framer_modules")
+    sys.path.append("./framer_modules")
 
     # check module folders
     installed_modules = [
@@ -63,6 +63,64 @@ def init(link_to=None, log_name="Framer", hook_error=False):
 
     disabled_modules = framerpkg["disable"]
     init_logger("Disabled Modules: \n- {}".format("\n- ".join(disabled_modules)))
+
+    # map installed modules info
+    init_logger("Mapping installed modules info...")
+    installed_modules_info = {}
+    for m in installed_modules:
+        moduleInfo = __import__(m).moduleInfo
+        installed_modules_info[m] = moduleInfo
+    init_logger(
+        "Installed Modules Info: \n\n- {}".format(
+            "\n\n- ".join(
+                [
+                    "{}: \n  @{}".format(
+                        m, "\n  @".join([f"{k}: {v}" for k, v in info.items()])
+                    )
+                    for m, info in installed_modules_info.items()
+                ]
+            )
+        )
+    )
+
+    # import installed modules
+    for m in installed_modules:
+        if m in disabled_modules:
+            continue
+
+        # check dependencies
+        require = framer.helper.load_require(m)
+        dep = require["dependencies"]
+
+        for d_name, d_version in dep.items():
+
+            # if dependency not installed
+            if d_name not in installed_modules:
+                raise ImportError(
+                    "Module {} require {} version {}, but {} not installed.".format(
+                        m, d_name, d_version, d_name
+                    )
+                )
+
+            # if dependency version not match
+            if d_version != installed_modules_info[d_name]["version"]:
+                raise ImportError(
+                    "Module {} require {} version {}, but {} version {} installed.".format(
+                        m,
+                        d_name,
+                        d_version,
+                        d_name,
+                        installed_modules_info[d_name]["version"],
+                    )
+                )
+
+            # check if dependency disabled
+            if d_name in disabled_modules:
+                raise ImportError(
+                    "Module {} require {} version {}, but {} disabled.".format(
+                        m, d_name, d_version, d_name
+                    )
+                )
 
     # if disable error hook
     if not hook_error:
