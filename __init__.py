@@ -66,9 +66,19 @@ def init(link_to=None, log_name="Framer", hook_error=False):
     # map installed modules info
     init_logger("Mapping installed modules info...")
     installed_modules_info = {}
+    sorted_installed_modules = []
     for m in installed_modules:
         moduleInfo = __import__(m).moduleInfo
         installed_modules_info[m] = moduleInfo
+
+        # if is hooker
+        if "hooker" in moduleInfo and moduleInfo["hooker"] == True:
+            sorted_installed_modules.insert(0, m)
+        else:
+            sorted_installed_modules.append(m)
+    installed_modules = sorted_installed_modules
+
+    # print installed modules info
     init_logger(
         "Installed Modules Info: \n\n- {}".format(
             "\n\n- ".join(
