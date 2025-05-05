@@ -54,7 +54,7 @@ class TestFramerAction(argparse.Action):
         with open(test_file, "w", encoding="utf-8") as f:
             f.write(
                 """import Framer
-Framer.init(link_to=__name__, log_name="Test", hook_error=True)
+Framer.init(link_to=__name__, log_name="CLI", hook_error=True)
 logger("Hello Framer!")"""
             )
         self.test_file = test_file
