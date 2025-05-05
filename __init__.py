@@ -12,6 +12,7 @@ def init(link_to=None, log_name="Framer", hook_error=False):
     # create framer
     framer = types.SimpleNamespace()
     framer.helper = helper
+    framer.link_to = link_to
 
     # temporary logger for init
     init_logger = functools.partial(framer.helper.logger, "Init")
@@ -153,10 +154,10 @@ def init(link_to=None, log_name="Framer", hook_error=False):
 
     # return framer
     init_logger("Framer Init Complete!")
-    if link_to is None:
+    if framer.link_to is None:
         return framer
     else:
         for attr in dir(framer):
             if not attr.startswith("__"):
-                sys.modules[link_to].__dict__[attr] = getattr(framer, attr)
+                sys.modules[framer.link_to].__dict__[attr] = getattr(framer, attr)
         return framer
