@@ -63,7 +63,9 @@ logger("Hello Framer!")"""
 
 # add arguments
 parser.add_argument("-h", "--help", help="Show Help", action=ShowHelpAction, nargs=0)
-parser.add_argument("--test", help="Test Framer", action=TestFramerAction, nargs=0)
+parser.add_argument(
+    "-t", "--test", help="Test Framer", action=TestFramerAction, nargs=0
+)
 
 # show help if no arguments
 if len(sys.argv) == 1:
