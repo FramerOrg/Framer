@@ -110,6 +110,17 @@ class EnvAction(argparse.Action):
             env[key] = value
             helper.write_file("env.json", helper.json_dump(env))
 
+        # delete env
+        if option_string == "--del":
+            key = values[0]
+            env = helper.load_env()
+
+            # write env file
+            logger(f"Delete Env {key}")
+            if key in env:
+                del env[key]
+            helper.write_file("env.json", helper.json_dump(env))
+
     def parse_env_value(self, value):
         if ":" not in value:
             return value
@@ -152,7 +163,14 @@ env_parser.add_argument(
     help="Set Environment, TYPE can be 'str', 'int', 'float', 'bool', Default 'str'",
     action=EnvAction,
     nargs=2,
-    metavar=("NAME", "[TYPE:]VALUE"),
+    metavar=("KEY", "[TYPE:]VALUE"),
+)
+env_parser.add_argument(
+    "--del",
+    help="Delete Environment",
+    action=EnvAction,
+    nargs=1,
+    metavar="KEY",
 )
 
 # show help if no arguments
