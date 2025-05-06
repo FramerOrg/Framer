@@ -75,4 +75,4 @@ if len(sys.argv) == 1:
 
 # parse arguments
 else:
-    args = parser.parse_args()
+    parser.parse_args()
