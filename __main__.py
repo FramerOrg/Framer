@@ -63,10 +63,21 @@ logger("Hello Framer!")"""
         logger(f"Create {test_file}")
 
 
+class EnvAction(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        print(namespace, option_string, values)
+
+
 # add arguments
 parser.add_argument("-h", "--help", help="Show Help", action=ShowHelpAction, nargs=0)
 parser.add_argument(
     "-t", "--test", help="Test Framer", action=TestFramerAction, nargs=0
+)
+env_parser = parser.add_subparsers(dest="env", help="Environment").add_parser(
+    "env", help="Environment Manager", add_help=False
+)
+env_parser.add_argument(
+    "-h", "--help", help="Show Help", action=ShowHelpAction, nargs=0
 )
 
 # show help if no arguments

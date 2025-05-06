@@ -40,7 +40,7 @@ def init(link_to=None, log_name="Framer", hook_error=False):
 
     if framer.helper.no_framerpkg():
         raise FileNotFoundError(
-            "No framerpkg.json found, please run `python3 -m Framer init` first."
+            "No framerpkg.json found, please run `python3 -m Framer --init` first."
         )
 
     if framer.helper.no_framer_modules():
