@@ -100,6 +100,29 @@ class EnvAction(argparse.Action):
                 )
             )
 
+        # set env
+        if option_string == "--set":
+            key = values[0]
+            value = self.parse_env_value(values[1])
+            print(key, value, type(value))
+
+    def parse_env_value(self, value):
+        if ":" not in value:
+            return value
+        else:
+            value_type, value = value.split(":", 1)
+            if value_type == "str":
+                return value
+            elif value_type == "int":
+                return int(value)
+            elif value_type == "float":
+                return float(value)
+            elif value_type == "bool":
+                return value.lower() == "true"
+            else:
+                logger(f"Invalid value type: {value_type}")
+                return value
+
 
 # add arguments
 parser.add_argument("-h", "--help", help="Show Help", action=ShowHelpAction, nargs=0)
@@ -122,10 +145,10 @@ env_parser.add_argument(
 )
 env_parser.add_argument(
     "--set",
-    help="Set Environment",
+    help="Set Environment, TYPE can be 'str', 'int', 'float', 'bool', Default 'str'",
     action=EnvAction,
     nargs=2,
-    metavar=("NAME", "VALUE"),
+    metavar=("NAME", "[TYPE:]VALUE"),
 )
 
 # show help if no arguments

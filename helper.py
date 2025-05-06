@@ -1,3 +1,7 @@
+import os
+import json
+
+
 def logger(from_module: str, message: str, max_width: int = None):
     import time
 
@@ -16,8 +20,6 @@ def logger(from_module: str, message: str, max_width: int = None):
         return "".join(result)
 
     def get_terminal_width():
-        import os
-
         try:
             columns = os.get_terminal_size().columns - 2
             return columns
@@ -43,7 +45,6 @@ def logger(from_module: str, message: str, max_width: int = None):
 
 
 def global_except_hook(exc_type, exc_value, exc_traceback):
-    import sys
     import traceback
 
     logger(
@@ -54,7 +55,6 @@ def global_except_hook(exc_type, exc_value, exc_traceback):
 
 def init_dir(path: str):
     import shutil
-    import os
 
     if os.path.exists(path):
         shutil.rmtree(path)
@@ -62,46 +62,34 @@ def init_dir(path: str):
 
 
 def no_framerpkg() -> bool:
-    import os
-
     if not os.path.exists("./framerpkg.json") or not os.path.isfile("./framerpkg.json"):
         return True
     return False
 
 
 def no_framer_modules() -> bool:
-    import os
-
     if not os.path.exists("./framer_modules") or not os.path.isdir("./framer_modules"):
         return True
     return False
 
 
 def no_env() -> bool:
-    import os
-
     if not os.path.exists("./env.json") or not os.path.isfile("./env.json"):
         return True
     return False
 
 
 def load_env():
-    import json
-
     with open("./env.json", "r", encoding="UTF-8") as f:
         return json.load(f)
 
 
 def load_framerpkg():
-    import json
-
     with open("./framerpkg.json", "r", encoding="UTF-8") as f:
         return json.load(f)
 
 
 def load_require(module_name: str):
-    import json
-
     with open(
         f"./framer_modules/{module_name}/require.json", "r", encoding="UTF-8"
     ) as f:
