@@ -61,6 +61,14 @@ def init_dir(path: str):
     os.mkdir(path)
 
 
+def load_installed_modules():
+    return [
+        m
+        for m in os.listdir("./framer_modules")
+        if os.path.isdir(f"./framer_modules/{m}") and not m.startswith(".")
+    ]
+
+
 def no_framerpkg() -> bool:
     if not os.path.exists("./framerpkg.json") or not os.path.isfile("./framerpkg.json"):
         return True

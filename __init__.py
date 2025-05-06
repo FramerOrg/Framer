@@ -48,11 +48,7 @@ def init(link_to=None, log_name="Framer", hook_error=False):
     sys.path.append("./framer_modules")
 
     # check module folders
-    installed_modules = [
-        m
-        for m in os.listdir("./framer_modules")
-        if os.path.isdir(f"./framer_modules/{m}") and not m.startswith(".")
-    ]
+    installed_modules = framer.helper.load_installed_modules()
     init_logger("Installed Modules: \n- {}".format("\n- ".join(installed_modules)))
 
     # check package config

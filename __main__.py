@@ -81,7 +81,24 @@ class InitProjectAction(argparse.Action):
 
 class ModuleCLIAction(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
-        print(option_string, values)
+        module = values[0]
+        args = values[1:]
+        installed_modules = helper.load_installed_modules()
+
+        # if module not installed
+        if module not in installed_modules:
+            raise ImportError(f"Module {module} not installed")
+
+        # import module
+        sys.path.append("./framer_modules")
+        module_obj = __import__(module)
+
+        # if no entry point
+        if not hasattr(module_obj, "cliMain"):
+            raise ImportError(f"Module {module} has no Entry Point: cliMain")
+
+        # run entry point
+        module_obj.cliMain(args)
 
 
 class EnvAction(argparse.Action):
