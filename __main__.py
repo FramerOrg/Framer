@@ -90,7 +90,7 @@ parser.add_argument(
     "-t", "--test", help="Test Framer", action=TestFramerAction, nargs=0
 )
 parser.add_argument("--init", help="Init Project", action=InitProjectAction, nargs=0)
-env_parser = parser.add_subparsers(dest="env", help="Environment").add_parser(
+env_parser = parser.add_subparsers(dest="env", help="Env Args").add_parser(
     "env", help="Environment Manager", add_help=False
 )
 env_parser.add_argument(
