@@ -94,3 +94,12 @@ def load_require(module_name: str):
         f"./framer_modules/{module_name}/require.json", "r", encoding="UTF-8"
     ) as f:
         return json.load(f)
+
+
+def write_file(path: str, content: str):
+    with open(path, "w", encoding="UTF-8") as f:
+        f.write(content)
+
+
+def json_dump(data):
+    return json.dumps(data, indent=4, ensure_ascii=False)

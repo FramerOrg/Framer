@@ -53,12 +53,12 @@ class TestFramerAction(argparse.Action):
             )
             + ".py"
         )
-        with open(test_file, "w", encoding="utf-8") as f:
-            f.write(
-                """import Framer
+        helper.write_file(
+            test_file,
+            """import Framer
 Framer.init(link_to=__name__, log_name="CLI", hook_error=True)
-logger("Hello Framer!")"""
-            )
+logger("Hello Framer!")""",
+        )
         self.test_file = test_file
         logger(f"Create {test_file}")
 
@@ -67,13 +67,13 @@ class InitProjectAction(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
         logger("Init Project...")
         if helper.no_framerpkg():
-            with open("./framerpkg.json", "w", encoding="UTF-8") as f:
-                f.write(
-                    """{
+            helper.write_file(
+                "./framerpkg.json",
+                """{
     "modules": {},
     "disable": []
-}"""
-                )
+}""",
+            )
         if helper.no_framer_modules():
             helper.init_dir("./framer_modules")
         logger("Init Project Done")
@@ -87,8 +87,7 @@ class EnvAction(argparse.Action):
         if option_string == "--init":
             logger("Init Env File...")
             if helper.no_env():
-                with open("env.json", "w", encoding="UTF-8") as f:
-                    f.write("{}")
+                helper.write_file("env.json", "{}")
             logger("Init Env File Done")
 
         # list envs
@@ -104,7 +103,12 @@ class EnvAction(argparse.Action):
         if option_string == "--set":
             key = values[0]
             value = self.parse_env_value(values[1])
-            print(key, value, type(value))
+            env = helper.load_env()
+
+            # write env file
+            logger(f"Set Env {key} => {value}")
+            env[key] = value
+            helper.write_file("env.json", helper.json_dump(env))
 
     def parse_env_value(self, value):
         if ":" not in value:
