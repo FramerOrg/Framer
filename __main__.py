@@ -87,6 +87,9 @@ class EnvAction(argparse.Action):
 # add arguments
 parser.add_argument("-h", "--help", help="Show Help", action=ShowHelpAction, nargs=0)
 parser.add_argument(
+    "-v", "--version", help="Show Version", action="version", version="1.0.0 (Official)"
+)
+parser.add_argument(
     "-t", "--test", help="Test Framer", action=TestFramerAction, nargs=0
 )
 parser.add_argument("--init", help="Init Project", action=InitProjectAction, nargs=0)
