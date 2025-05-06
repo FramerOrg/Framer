@@ -81,7 +81,6 @@ class InitProjectAction(argparse.Action):
 
 class EnvAction(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
-        print(namespace, option_string, values)
 
         # init env file
         if option_string == "--init":
