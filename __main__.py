@@ -83,11 +83,28 @@ class EnvAction(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
         print(namespace, option_string, values)
 
+        # init env file
+        if option_string == "--init":
+            logger("Init Env File...")
+            if helper.no_env():
+                with open("env.json", "w", encoding="UTF-8") as f:
+                    f.write("{}")
+            logger("Init Env File Done")
+
+        # list envs
+        if option_string == "-l" or option_string == "--list":
+            env = helper.load_env()
+            logger(
+                "Env Links: \n- {}".format(
+                    "\n- ".join([f"{key} => {value}" for key, value in env.items()])
+                )
+            )
+
 
 # add arguments
 parser.add_argument("-h", "--help", help="Show Help", action=ShowHelpAction, nargs=0)
 parser.add_argument(
-    "-v", "--version", help="Show Version", action="version", version="1.0.0 (Official)"
+    "-v", "--version", help="Show Version", action="version", version="1.0 (Official)"
 )
 parser.add_argument(
     "-t", "--test", help="Test Framer", action=TestFramerAction, nargs=0
@@ -98,6 +115,17 @@ env_parser = parser.add_subparsers(dest="env", help="Env Args").add_parser(
 )
 env_parser.add_argument(
     "-h", "--help", help="Show Help", action=ShowHelpAction, nargs=0
+)
+env_parser.add_argument("--init", help="Init Env File", action=EnvAction, nargs=0)
+env_parser.add_argument(
+    "-l", "--list", help="List Environments", action=EnvAction, nargs=0
+)
+env_parser.add_argument(
+    "--set",
+    help="Set Environment",
+    action=EnvAction,
+    nargs=2,
+    metavar=("NAME", "VALUE"),
 )
 
 # show help if no arguments

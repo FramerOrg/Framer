@@ -77,6 +77,14 @@ def no_framer_modules() -> bool:
     return False
 
 
+def no_env() -> bool:
+    import os
+
+    if not os.path.exists("./env.json") or not os.path.isfile("./env.json"):
+        return True
+    return False
+
+
 def load_env():
     import json
 

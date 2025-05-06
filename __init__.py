@@ -21,7 +21,7 @@ def init(link_to=None, log_name="Framer", hook_error=False):
     sys.excepthook = framer.helper.global_except_hook
 
     # load env
-    if os.path.exists("env.json"):
+    if not framer.helper.no_env():
         init_logger("Loading env.json...")
 
         env = framer.helper.load_env()
