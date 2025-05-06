@@ -14,8 +14,10 @@ python = sys.executable
 
 # CLI init
 logger = functools.partial(helper.logger, "CLI")
+sys.excepthook = helper.global_except_hook
 
 
+# parser init
 class LoggerParser(argparse.ArgumentParser):
     def error(self, message):
         logger(message)
