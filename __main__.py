@@ -79,6 +79,11 @@ class InitProjectAction(argparse.Action):
         logger("Init Project Done")
 
 
+class ModuleCLIAction(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        print(option_string, values)
+
+
 class EnvAction(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
 
@@ -147,6 +152,13 @@ parser.add_argument(
     "-t", "--test", help="Test Framer", action=TestFramerAction, nargs=0
 )
 parser.add_argument("--init", help="Init Project", action=InitProjectAction, nargs=0)
+parser.add_argument(
+    "-m",
+    "--module",
+    help="Load Module CLI",
+    action=ModuleCLIAction,
+    nargs=argparse.REMAINDER,
+)
 env_parser = parser.add_subparsers(dest="env", help="Env Args").add_parser(
     "env", help="Environment Manager", add_help=False
 )
