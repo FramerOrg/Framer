@@ -63,6 +63,22 @@ logger("Hello Framer!")"""
         logger(f"Create {test_file}")
 
 
+class InitProjectAction(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        logger("Init Project...")
+        if helper.no_framerpkg():
+            with open("./framerpkg.json", "w", encoding="UTF-8") as f:
+                f.write(
+                    """{
+    "modules": {},
+    "disable": []
+}"""
+                )
+        if helper.no_framer_modules():
+            helper.init_dir("./framer_modules")
+        logger("Init Project Done")
+
+
 class EnvAction(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
         print(namespace, option_string, values)
@@ -73,6 +89,7 @@ parser.add_argument("-h", "--help", help="Show Help", action=ShowHelpAction, nar
 parser.add_argument(
     "-t", "--test", help="Test Framer", action=TestFramerAction, nargs=0
 )
+parser.add_argument("--init", help="Init Project", action=InitProjectAction, nargs=0)
 env_parser = parser.add_subparsers(dest="env", help="Environment").add_parser(
     "env", help="Environment Manager", add_help=False
 )
