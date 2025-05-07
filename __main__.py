@@ -1,7 +1,8 @@
 import argparse
 import os
 import sys
-import shutil
+import time
+import subprocess
 import functools
 import random
 
@@ -11,10 +12,17 @@ from . import helper
 # python executable
 python = sys.executable
 
-
 # CLI init
 logger = functools.partial(helper.logger, "CLI")
 sys.excepthook = helper.global_except_hook
+
+# init runner
+runner_config = {
+    "exit_on_finish": False,
+    "restart_on_error": False,
+    "restart_sleep": 1,
+    "restart_on_file_change": False,
+}
 
 
 # parser class
@@ -24,6 +32,7 @@ class LoggerParser(argparse.ArgumentParser):
         sys.exit(1)
 
 
+# actions
 class ShowHelpAction(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
         logger(parser.format_help())
@@ -157,6 +166,116 @@ class EnvAction(argparse.Action):
                 return value
 
 
+class RunnerAction(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+
+        # config
+        if option_string == "--exit-on-finish":
+            runner_config["exit_on_finish"] = True
+        if option_string == "--restart-on-error":
+            runner_config["restart_on_error"] = True
+        if option_string == "--restart-sleep":
+            runner_config["restart_sleep"] = int(values[0])
+        if option_string == "--restart-on-file-change":
+            runner_config["restart_on_file_change"] = True
+
+        # start
+        if option_string == "--start":
+            logger("Start Runner...")
+            command = [python] + values
+            self.file_watchs = []
+            if runner_config["restart_on_file_change"] == True:
+                logger("Get File Watch List...")
+                self.get_watch_list()
+                logger("Watch List: \n- {}".format("\n- ".join(self.file_watchs)))
+
+            # run command
+            self.process = subprocess.Popen(command)
+
+            # process manager
+            try:
+                while True:
+
+                    # check file change
+                    if self.check_file_change():
+                        if runner_config["restart_on_file_change"] == True:
+                            self.stop_runner()
+                            self.sleep()
+                            self.process = subprocess.Popen(command)
+
+                    if self.process.poll() != None:
+
+                        # script run finish
+                        if self.process.returncode == 0:
+                            if runner_config["exit_on_finish"] == True:
+                                break
+                            else:
+                                logger(
+                                    "Runner Exit {}, Wait Next Event...".format(
+                                        self.process.returncode
+                                    )
+                                )
+                                self.sleep()
+
+                        # script run error
+                        if self.process.returncode != 0:
+                            if runner_config["restart_on_error"] == True:
+                                logger(
+                                    "Runner Exit {}, Restart".format(
+                                        self.process.returncode
+                                    )
+                                )
+                                self.sleep()
+                                self.process = subprocess.Popen(command)
+                            else:
+                                break
+
+            # runner exit
+            except KeyboardInterrupt:
+                self.stop_runner()
+            finally:
+                logger("Runner Exit {}".format(self.process.returncode))
+
+    def get_watch_list(self):
+        self.file_watchs += [
+            f"./{fname}"
+            for fname in os.listdir(".")
+            if not fname.startswith(".")
+            and fname.endswith(".py")
+            and os.path.isfile(f"./{fname}")
+        ]
+        for fbase, _, fnames in os.walk("./framer_modules"):
+            self.file_watchs += [
+                f"{fbase}/{fname}"
+                for fname in fnames
+                if not fname.startswith(".")
+                and fname.endswith(".py")
+                and os.path.isfile(f"{fbase}/{fname}")
+            ]
+        self.modified_time = {}
+        for fname in self.file_watchs:
+            self.modified_time[fname] = os.path.getmtime(fname)
+
+    def check_file_change(self):
+        for fname in self.file_watchs:
+            if os.path.getmtime(fname) != self.modified_time[fname]:
+                self.modified_time[fname] = os.path.getmtime(fname)
+                logger(f"File {fname} Changed, Restart")
+                return True
+        return False
+
+    def sleep(self):
+        time.sleep(runner_config["restart_sleep"])
+
+    def stop_runner(self):
+        try:
+            self.process.terminate()
+            self.process.wait(timeout=120)
+        except subprocess.TimeoutExpired:
+            self.process.kill()
+            self.process.wait()
+
+
 # parsers
 main_parser = LoggerParser(description="Framer CLI", add_help=False)
 main_parser.add_argument(
@@ -203,6 +322,37 @@ env_parser.add_argument(
 runner_parser = LoggerParser(prog="runner", description="Framer CLI", add_help=False)
 runner_parser.add_argument(
     "-h", "--help", help="Show Help", action=ShowHelpAction, nargs=0
+)
+runner_parser.add_argument(
+    "--exit-on-finish",
+    help="Exit on Finish",
+    action=RunnerAction,
+    nargs=0,
+)
+runner_parser.add_argument(
+    "--restart-on-error",
+    help="Restart on Error",
+    action=RunnerAction,
+    nargs=0,
+)
+runner_parser.add_argument(
+    "--restart-sleep",
+    help="Restart Sleep Seconds",
+    action=RunnerAction,
+    nargs=1,
+    metavar="SECONDS",
+)
+runner_parser.add_argument(
+    "--restart-on-file-change",
+    help="Restart on File Change",
+    action=RunnerAction,
+    nargs=0,
+)
+runner_parser.add_argument(
+    "--start",
+    help="Start Runner",
+    action=RunnerAction,
+    nargs=argparse.REMAINDER,
 )
 main_subparsers = main_parser.add_subparsers(dest="subparsers")
 main_subparsers.add_parser("env", parents=[env_parser], add_help=False)
