@@ -192,7 +192,7 @@ class RunnerAction(argparse.Action):
             # run command
             self.process = subprocess.Popen(command)
 
-            # process manager
+            # process manage
             try:
                 while True:
 
