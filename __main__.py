@@ -232,6 +232,7 @@ class RunnerAction(argparse.Action):
 
             # runner exit
             except KeyboardInterrupt:
+                logger("KeyboardInterrupt, Stop Runner...")
                 self.stop_runner()
             finally:
                 logger("Runner Exit {}".format(self.process.returncode))
