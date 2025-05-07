@@ -17,14 +17,11 @@ logger = functools.partial(helper.logger, "CLI")
 sys.excepthook = helper.global_except_hook
 
 
-# parser init
+# parser class
 class LoggerParser(argparse.ArgumentParser):
     def error(self, message):
         logger(message)
         sys.exit(1)
-
-
-parser = LoggerParser(description="Framer CLI", add_help=False)
 
 
 class ShowHelpAction(argparse.Action):
@@ -160,25 +157,28 @@ class EnvAction(argparse.Action):
                 return value
 
 
-# add arguments
-parser.add_argument("-h", "--help", help="Show Help", action=ShowHelpAction, nargs=0)
-parser.add_argument(
+# parsers
+main_parser = LoggerParser(description="Framer CLI", add_help=False)
+main_parser.add_argument(
+    "-h", "--help", help="Show Help", action=ShowHelpAction, nargs=0
+)
+main_parser.add_argument(
     "-v", "--version", help="Show Version", action="version", version="1.0 (Official)"
 )
-parser.add_argument(
+main_parser.add_argument(
     "-t", "--test", help="Test Framer", action=TestFramerAction, nargs=0
 )
-parser.add_argument("--init", help="Init Project", action=InitProjectAction, nargs=0)
-parser.add_argument(
+main_parser.add_argument(
+    "--init", help="Init Project", action=InitProjectAction, nargs=0
+)
+main_parser.add_argument(
     "-m",
     "--module",
     help="Load Module CLI",
     action=ModuleCLIAction,
     nargs=argparse.REMAINDER,
 )
-env_parser = parser.add_subparsers(dest="env", help="Env Args").add_parser(
-    "env", help="Environment Manager", add_help=False
-)
+env_parser = LoggerParser(prog="env", description="Framer CLI", add_help=False)
 env_parser.add_argument(
     "-h", "--help", help="Show Help", action=ShowHelpAction, nargs=0
 )
@@ -200,11 +200,19 @@ env_parser.add_argument(
     nargs=1,
     metavar="KEY",
 )
+runner_parser = LoggerParser(prog="runner", description="Framer CLI", add_help=False)
+runner_parser.add_argument(
+    "-h", "--help", help="Show Help", action=ShowHelpAction, nargs=0
+)
+main_subparsers = main_parser.add_subparsers(dest="command")
+main_subparsers.add_parser("env", parents=[env_parser], add_help=False)
+main_subparsers.add_parser("runner", parents=[runner_parser], add_help=False)
+
 
 # show help if no arguments
 if len(sys.argv) == 1:
-    parser.parse_args(["--help"])
+    main_parser.parse_args(["--help"])
 
 # parse arguments
 else:
-    parser.parse_args()
+    main_parser.parse_args()
