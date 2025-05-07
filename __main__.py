@@ -204,7 +204,7 @@ runner_parser = LoggerParser(prog="runner", description="Framer CLI", add_help=F
 runner_parser.add_argument(
     "-h", "--help", help="Show Help", action=ShowHelpAction, nargs=0
 )
-main_subparsers = main_parser.add_subparsers(dest="command")
+main_subparsers = main_parser.add_subparsers(dest="subparsers")
 main_subparsers.add_parser("env", parents=[env_parser], add_help=False)
 main_subparsers.add_parser("runner", parents=[runner_parser], add_help=False)
 
