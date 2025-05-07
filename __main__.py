@@ -197,7 +197,7 @@ class RunnerAction(argparse.Action):
                 while True:
 
                     # check file change
-                    if self.check_file_change():
+                    if self.check_file_change() == True:
                         if runner_config["restart_on_file_change"] == True:
                             self.stop_runner()
                             self.sleep()
