@@ -53,12 +53,13 @@ def global_except_hook(exc_type, exc_value, exc_traceback):
     )
 
 
-def init_dir(path: str):
+def init_dir(path: str, remove: bool = False):
     import shutil
 
     if os.path.exists(path):
         shutil.rmtree(path)
-    os.mkdir(path)
+    if not remove:
+        os.mkdir(path)
 
 
 def load_installed_modules():

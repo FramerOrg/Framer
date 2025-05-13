@@ -12,6 +12,9 @@ from . import helper
 # python executable
 python = sys.executable
 
+# framer repo
+framer_repo = "https://github.com/runoneall/Framer.git"
+
 # CLI init
 logger = functools.partial(helper.logger, "CLI")
 sys.excepthook = helper.global_except_hook
@@ -105,6 +108,23 @@ class ModuleCLIAction(argparse.Action):
 
         # run entry point
         module_obj.cliMain(args)
+
+
+class FramerUpdateAction(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        logger("Update Framer...")
+        helper.init_dir("update_tmp")
+        fetch_status = self.exec_command("git clone {} update_tmp".format(framer_repo))
+        if fetch_status != 0:
+            logger("Fetch Framer Failed")
+            helper.init_dir("update_tmp", remove=True)
+            return
+        helper.init_dir("Framer", remove=True)
+        os.rename("update_tmp", "Framer")
+        logger("Update Framer Done")
+
+    def exec_command(self, command):
+        return os.system(command)
 
 
 class EnvAction(argparse.Action):
@@ -297,6 +317,9 @@ main_parser.add_argument(
     help="Load Module CLI",
     action=ModuleCLIAction,
     nargs=argparse.REMAINDER,
+)
+main_parser.add_argument(
+    "--update", help="Update Framer", action=FramerUpdateAction, nargs=0
 )
 env_parser = LoggerParser(prog="env", description="Framer CLI", add_help=False)
 env_parser.add_argument(
