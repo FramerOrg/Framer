@@ -5,6 +5,7 @@ import time
 import subprocess
 import functools
 import random
+import urllib.request
 
 # import helper
 from . import helper
@@ -79,8 +80,10 @@ class InitProjectAction(argparse.Action):
             helper.write_file(
                 "./framerpkg.json",
                 """{
-    "modules": {},
-    "disable": []
+  "modules": {},
+  "disable": [],
+  "origins": [],
+  "module_map": {}
 }""",
             )
         if helper.no_framer_modules():
@@ -296,6 +299,121 @@ class RunnerStartAction(argparse.Action):
             self.process.wait()
 
 
+class OriginAddAction(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+
+        # origin url
+        origin = values[0]
+        logger(f"Add {origin}")
+
+        # load framerpkg
+        if helper.no_framerpkg():
+            main_parser.parse_args(["--init"])
+        framerpkg = helper.load_framerpkg()
+
+        # add origin
+        if origin not in framerpkg["origins"]:
+            framerpkg["origins"].append(origin)
+            helper.write_file("./framerpkg.json", helper.json_dump(framerpkg))
+        logger(f"Add Done")
+
+
+class OriginDelAction(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        origin = values[0]
+        logger(f"Delete {origin}")
+
+        # load framerpkg
+        if helper.no_framerpkg():
+            main_parser.parse_args(["--init"])
+        framerpkg = helper.load_framerpkg()
+
+        # delete origin
+        if origin in framerpkg["origins"]:
+            framerpkg["origins"].remove(origin)
+            helper.write_file("./framerpkg.json", helper.json_dump(framerpkg))
+        logger(f"Delete Done")
+
+
+class OriginListAction(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        framerpkg = helper.load_framerpkg()
+        logger("Origins: \n- {}".format("\n- ".join(framerpkg["origins"])))
+
+
+class OriginSyncAction(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        framerpkg = helper.load_framerpkg()
+
+        # fetch origins
+        for origin_url in framerpkg["origins"]:
+            origin_map = helper.json_load(self.http_text_get(f"{origin_url}/map.json"))
+            origin_modules = origin_map["modules"]
+
+            # fetch modules
+            for module_name in origin_modules:
+                local_module_map = {}
+
+                module_info = helper.json_load(
+                    self.http_text_get(f"{origin_url}/{module_name}/info.json")
+                )
+                local_module_name = "{}@{}".format(module_name, origin_map["name"])
+                local_module_map["author"] = module_info["author"]
+                local_module_map["description"] = module_info["description"]
+                local_module_map["versions"] = {}
+
+                # latest version
+                version_latest = self.http_text_get(
+                    f"{origin_url}/{module_name}/latest.txt"
+                )
+                local_module_map["latest"] = version_latest
+
+                # fetch versions
+                for version in module_info["versions"]:
+                    file_zip_url = f"{origin_url}/{module_name}/{version}/file.zip"
+                    version_require = helper.json_load(
+                        self.http_text_get(
+                            f"{origin_url}/{module_name}/{version}/require.json"
+                        )
+                    )
+                    local_module_map["versions"][version] = {
+                        "download": file_zip_url,
+                        "require": version_require,
+                    }
+
+                # save module map
+                framerpkg["module_map"][local_module_name] = local_module_map
+
+        # save sync result
+        helper.write_file("./framerpkg.json", helper.json_dump(framerpkg))
+        logger("Sync Done")
+
+    def http_text_get(self, url, retry=3):
+        logger(f"Fetch {url}")
+        while retry > 0:
+            try:
+                response = urllib.request.urlopen(
+                    urllib.request.Request(
+                        url,
+                        headers={"User-Agent": "Framer-CLI/1.0 (Official)"},
+                    )
+                )
+                return response.read().decode("utf-8")
+            except KeyboardInterrupt:
+                logger("KeyboardInterrupt, Stop Fetch...")
+                return None
+            except Exception:
+                logger(f"Fetch {url} Failed, Retry {retry}...")
+                retry -= 1
+        logger(f"Fetch {url} Failed")
+        return None
+
+
+class OriginMakeAction(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        pass
+
+
 # parsers
 main_parser = LoggerParser(description="Framer CLI", add_help=False)
 main_parser.add_argument(
@@ -377,9 +495,29 @@ runner_parser.add_argument(
     action=RunnerStartAction,
     nargs=argparse.REMAINDER,
 )
+origin_parser = LoggerParser(prog="origin", description="Framer CLI", add_help=False)
+origin_parser.add_argument(
+    "-h", "--help", help="Show Help", action=ShowHelpAction, nargs=0
+)
+origin_parser.add_argument(
+    "--add", help="Add Origin", action=OriginAddAction, nargs=1, metavar="ORIGIN"
+)
+origin_parser.add_argument(
+    "-l", "--list", help="List Origins", action=OriginListAction, nargs=0
+)
+origin_parser.add_argument(
+    "--del", help="Delete Origin", action=OriginDelAction, nargs=1, metavar="ORIGIN"
+)
+origin_parser.add_argument(
+    "--sync", help="Sync Origin", action=OriginSyncAction, nargs=0
+)
+origin_parser.add_argument(
+    "--make", help="Make Origin", action=OriginMakeAction, nargs=0
+)
 main_subparsers = main_parser.add_subparsers(dest="subparsers")
 main_subparsers.add_parser("env", parents=[env_parser], add_help=False)
 main_subparsers.add_parser("runner", parents=[runner_parser], add_help=False)
+main_subparsers.add_parser("origin", parents=[origin_parser], add_help=False)
 
 
 # show help if no arguments

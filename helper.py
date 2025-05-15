@@ -111,4 +111,8 @@ def write_file(path: str, content: str):
 
 
 def json_dump(data):
-    return json.dumps(data, indent=4, ensure_ascii=False)
+    return json.dumps(data, indent=2, ensure_ascii=False)
+
+
+def json_load(data):
+    return json.loads(data)
