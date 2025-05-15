@@ -127,46 +127,34 @@ class FramerUpdateAction(argparse.Action):
         return os.system(command)
 
 
-class EnvAction(argparse.Action):
+class EnvInitAction(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
+        logger("Init Env File...")
+        if helper.no_env():
+            helper.write_file("env.json", "{}")
+        logger("Init Env File Done")
 
-        # init env file
-        if option_string == "--init":
-            logger("Init Env File...")
-            if helper.no_env():
-                helper.write_file("env.json", "{}")
-            logger("Init Env File Done")
 
-        # list envs
-        if option_string == "-l" or option_string == "--list":
-            env = helper.load_env()
-            logger(
-                "Env Links: \n- {}".format(
-                    "\n- ".join([f"{key} => {value}" for key, value in env.items()])
-                )
+class EnvListAction(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        env = helper.load_env()
+        logger(
+            "Env Links: \n- {}".format(
+                "\n- ".join([f"{key} => {value}" for key, value in env.items()])
             )
+        )
 
-        # set env
-        if option_string == "--set":
-            key = values[0]
-            value = self.parse_env_value(values[1])
-            env = helper.load_env()
 
-            # write env file
-            logger(f"Set Env {key} => {value}")
-            env[key] = value
-            helper.write_file("env.json", helper.json_dump(env))
+class EnvSetAction(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        key = values[0]
+        value = self.parse_env_value(values[1])
+        env = helper.load_env()
 
-        # delete env
-        if option_string == "--del":
-            key = values[0]
-            env = helper.load_env()
-
-            # write env file
-            logger(f"Delete Env {key}")
-            if key in env:
-                del env[key]
-            helper.write_file("env.json", helper.json_dump(env))
+        # write env file
+        logger(f"Set Env {key} => {value}")
+        env[key] = value
+        helper.write_file("env.json", helper.json_dump(env))
 
     def parse_env_value(self, value):
         if ":" not in value:
@@ -186,10 +174,20 @@ class EnvAction(argparse.Action):
                 return value
 
 
-class RunnerAction(argparse.Action):
+class EnvDelAction(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
+        key = values[0]
+        env = helper.load_env()
 
-        # config
+        # write env file
+        logger(f"Delete Env {key}")
+        if key in env:
+            del env[key]
+        helper.write_file("env.json", helper.json_dump(env))
+
+
+class RunnerConfigAction(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
         if option_string == "--exit-on-finish":
             runner_config["exit_on_finish"] = True
         if option_string == "--restart-on-error":
@@ -199,63 +197,64 @@ class RunnerAction(argparse.Action):
         if option_string == "--restart-on-file-change":
             runner_config["restart_on_file_change"] = True
 
-        # start
-        if option_string == "--start":
-            logger("Start Runner...")
-            command = [python] + values
-            self.file_watchs = []
-            if runner_config["restart_on_file_change"] == True:
-                logger("Get File Watch List...")
-                self.get_watch_list()
-                logger("Watch List: \n- {}".format("\n- ".join(self.file_watchs)))
 
-            # run command
-            self.process = subprocess.Popen(command)
+class RunnerStartAction(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        logger("Start Runner...")
+        command = [python] + values
+        self.file_watchs = []
+        if runner_config["restart_on_file_change"] == True:
+            logger("Get File Watch List...")
+            self.get_watch_list()
+            logger("Watch List: \n- {}".format("\n- ".join(self.file_watchs)))
 
-            # process manage
-            try:
-                while True:
+        # run command
+        self.process = subprocess.Popen(command)
 
-                    # check file change
-                    if self.check_file_change() == True:
-                        if runner_config["restart_on_file_change"] == True:
-                            self.stop_runner()
+        # process manage
+        try:
+            while True:
+
+                # check file change
+                if self.check_file_change() == True:
+                    if runner_config["restart_on_file_change"] == True:
+                        self.stop_runner()
+                        self.sleep()
+                        self.process = subprocess.Popen(command)
+
+                if self.process.poll() != None:
+
+                    # script run finish
+                    if self.process.returncode == 0:
+                        if runner_config["exit_on_finish"] == True:
+                            break
+                        else:
+                            logger(
+                                "Runner Exit {}, Wait Next Event...".format(
+                                    self.process.returncode
+                                )
+                            )
+                            self.sleep()
+
+                    # script run error
+                    if self.process.returncode != 0:
+                        if runner_config["restart_on_error"] == True:
+                            logger(
+                                "Runner Exit {}, Restart".format(
+                                    self.process.returncode
+                                )
+                            )
                             self.sleep()
                             self.process = subprocess.Popen(command)
+                        else:
+                            break
 
-                    if self.process.poll() != None:
-
-                        # script run finish
-                        if self.process.returncode == 0:
-                            if runner_config["exit_on_finish"] == True:
-                                break
-                            else:
-                                logger(
-                                    "Runner Exit {}, Wait Next Event...".format(
-                                        self.process.returncode
-                                    )
-                                )
-                                self.sleep()
-
-                        # script run error
-                        if self.process.returncode != 0:
-                            if runner_config["restart_on_error"] == True:
-                                logger(
-                                    "Runner Exit {}, Restart".format(
-                                        self.process.returncode
-                                    )
-                                )
-                                self.sleep()
-                                self.process = subprocess.Popen(command)
-                            else:
-                                break
-
-            # runner exit
-            except KeyboardInterrupt:
-                logger("KeyboardInterrupt, Stop Runner...")
-                self.stop_runner()
-            finally:
-                logger("Runner Exit {}".format(self.process.returncode))
+        # runner exit
+        except KeyboardInterrupt:
+            logger("KeyboardInterrupt, Stop Runner...")
+            self.stop_runner()
+        finally:
+            logger("Runner Exit {}".format(self.process.returncode))
 
     def get_watch_list(self):
         self.file_watchs += [
@@ -325,21 +324,21 @@ env_parser = LoggerParser(prog="env", description="Framer CLI", add_help=False)
 env_parser.add_argument(
     "-h", "--help", help="Show Help", action=ShowHelpAction, nargs=0
 )
-env_parser.add_argument("--init", help="Init Env File", action=EnvAction, nargs=0)
+env_parser.add_argument("--init", help="Init Env File", action=EnvInitAction, nargs=0)
 env_parser.add_argument(
-    "-l", "--list", help="List Environments", action=EnvAction, nargs=0
+    "-l", "--list", help="List Environments", action=EnvListAction, nargs=0
 )
 env_parser.add_argument(
     "--set",
     help="Set Environment, TYPE can be 'str', 'int', 'float', 'bool', Default 'str'",
-    action=EnvAction,
+    action=EnvSetAction,
     nargs=2,
     metavar=("KEY", "[TYPE:]VALUE"),
 )
 env_parser.add_argument(
     "--del",
     help="Delete Environment",
-    action=EnvAction,
+    action=EnvDelAction,
     nargs=1,
     metavar="KEY",
 )
@@ -350,32 +349,32 @@ runner_parser.add_argument(
 runner_parser.add_argument(
     "--exit-on-finish",
     help="Exit on Finish",
-    action=RunnerAction,
+    action=RunnerConfigAction,
     nargs=0,
 )
 runner_parser.add_argument(
     "--restart-on-error",
     help="Restart on Error",
-    action=RunnerAction,
+    action=RunnerConfigAction,
     nargs=0,
 )
 runner_parser.add_argument(
     "--restart-sleep",
     help="Restart Sleep Seconds",
-    action=RunnerAction,
+    action=RunnerConfigAction,
     nargs=1,
     metavar="SECONDS",
 )
 runner_parser.add_argument(
     "--restart-on-file-change",
     help="Restart on File Change",
-    action=RunnerAction,
+    action=RunnerConfigAction,
     nargs=0,
 )
 runner_parser.add_argument(
     "--start",
     help="Start Runner",
-    action=RunnerAction,
+    action=RunnerStartAction,
     nargs=argparse.REMAINDER,
 )
 main_subparsers = main_parser.add_subparsers(dest="subparsers")
