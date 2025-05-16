@@ -399,7 +399,11 @@ class OriginSyncAction(argparse.Action):
                 response = urllib.request.urlopen(
                     urllib.request.Request(
                         url,
-                        headers={"User-Agent": "Framer-CLI/1.0 (Official)"},
+                        headers={
+                            "User-Agent": "Framer-CLI/1.0 (Official)",
+                            "Cache-Control": "no-cache",
+                            "Pragma": "no-cache",
+                        },
                     )
                 )
                 return response.read().decode("utf-8")
