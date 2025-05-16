@@ -79,12 +79,9 @@ class InitProjectAction(argparse.Action):
         if helper.no_framerpkg():
             helper.write_file(
                 "./framerpkg.json",
-                """{
-  "modules": {},
-  "disable": [],
-  "origins": [],
-  "module_map": {}
-}""",
+                helper.json_dump(
+                    {"modules": {}, "disable": [], "origins": [], "module_map": {}}
+                ),
             )
         if helper.no_framer_modules():
             helper.init_dir("./framer_modules")
@@ -357,9 +354,16 @@ class OriginSyncAction(argparse.Action):
                 module_info = helper.json_load(
                     self.http_text_get(f"{origin_url}/{module_name}/info.json")
                 )
+
+                # readme.md
+                m_desc = module_info["description"]
+                if m_desc.startswith("!"):
+                    m_readme = m_desc[1:]
+                    m_desc = f"{origin_url}/{module_name}/{m_readme}"
+
                 local_module_name = "{}@{}".format(module_name, origin_map["name"])
                 local_module_map["author"] = module_info["author"]
-                local_module_map["description"] = module_info["description"]
+                local_module_map["description"] = m_desc
                 local_module_map["versions"] = {}
 
                 # latest version
