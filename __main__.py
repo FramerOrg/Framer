@@ -357,7 +357,7 @@ class OriginSyncAction(argparse.Action):
 
                 # readme.md
                 m_desc = module_info["description"]
-                if m_desc.startswith("!"):
+                if m_desc.startswith("@"):
                     m_readme = m_desc[1:]
                     m_desc = f"{origin_url}/{module_name}/{m_readme}"
 
