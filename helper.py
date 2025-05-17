@@ -110,6 +110,11 @@ def write_file(path: str, content: str):
         f.write(content)
 
 
+def read_file(path: str):
+    with open(path, "r", encoding="UTF-8") as f:
+        return f.read()
+
+
 def json_dump(data):
     return json.dumps(data, indent=2, ensure_ascii=False)
 

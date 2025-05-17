@@ -419,7 +419,24 @@ class OriginSyncAction(argparse.Action):
 
 class OriginMakeAction(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
-        pass
+        base_dir = "./framer_modules"
+
+        # load target modules
+        modules = helper.load_installed_modules()
+        logger("Target To Make: \n- {}".format("\n- ".join(modules)))
+
+        # load maker config
+        if not os.path.exists("./origin-maker.json"):
+            maker_config = {
+                "name": input("Enter Name: "),
+                "base": input("Enter Base URL: "),
+            }
+            helper.write_file("./origin-maker.json", helper.json_dump(maker_config))
+        maker_config = helper.json_load(helper.read_file("./origin-maker.json"))
+
+        # make origin map
+        origin_map = {**maker_config, "modules": modules}
+        print(origin_map)
 
 
 # parsers
