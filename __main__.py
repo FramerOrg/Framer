@@ -6,6 +6,7 @@ import subprocess
 import functools
 import random
 import urllib.request
+import zipfile
 
 # import helper
 from . import helper
@@ -419,7 +420,12 @@ class OriginSyncAction(argparse.Action):
 
 class OriginMakeAction(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
-        base_dir = "./framer_modules"
+
+        # init maker dir
+        base_dir = "./maker_release"
+        sys.path.append("./framer_modules")
+        if not os.path.exists(base_dir):
+            os.makedirs(base_dir)
 
         # load target modules
         modules = helper.load_installed_modules()
@@ -433,10 +439,126 @@ class OriginMakeAction(argparse.Action):
             }
             helper.write_file("./origin-maker.json", helper.json_dump(maker_config))
         maker_config = helper.json_load(helper.read_file("./origin-maker.json"))
+        logger(
+            "Maker Config: \n- {}".format(
+                "\n- ".join([f"{key}: {value}" for key, value in maker_config.items()])
+            )
+        )
 
         # make origin map
-        origin_map = {**maker_config, "modules": modules}
-        print(origin_map)
+        origin_map = helper.json_dump({**maker_config, "modules": modules})
+        helper.write_file(f"{base_dir}/map.json", origin_map)
+        logger(f"Make Origin Map: \n{origin_map}")
+
+        # process modules
+        for module_name in modules:
+            logger(f"Process Module {module_name}")
+
+            # get module info
+            moduleInfo = __import__(module_name).moduleInfo
+            logger(
+                "Module {} Info: \n{}".format(module_name, helper.json_dump(moduleInfo))
+            )
+
+            # make module dir
+            module_base = f"{base_dir}/{module_name}"
+            if not os.path.exists(module_base):
+                os.makedirs(module_base)
+
+            # latest version file
+            version_latest = moduleInfo["version"]
+            helper.write_file(f"{module_base}/latest.txt", version_latest)
+            logger(f"Module {module_name} Latest: {version_latest}")
+
+            # process module info
+            del moduleInfo["version"]
+            if os.path.exists(f"{module_base}/info.json"):
+                module_info = helper.json_load(
+                    helper.read_file(f"{module_base}/info.json")
+                )
+                if version_latest in module_info["versions"]:
+                    logger(f"Module {module_name} Version {version_latest} Exists")
+                    continue
+            else:
+                module_info = {**moduleInfo, "versions": []}
+            module_info["versions"].append(version_latest)
+
+            # write module info
+            json_module_info = helper.json_dump(module_info)
+            helper.write_file(f"{module_base}/info.json", json_module_info)
+            logger("Module {} Map: \n{}".format(module_name, json_module_info))
+
+            # process versions
+            logger(f"Process Module {module_name} Version {version_latest}")
+
+            # make version dir
+            version_base = f"{module_base}/{version_latest}"
+            if not os.path.exists(version_base):
+                os.makedirs(version_base)
+
+            # copy version require
+            version_require = helper.read_file(
+                f"./framer_modules/{module_name}/require.json"
+            )
+            helper.write_file(
+                f"{version_base}/require.json",
+                version_require,
+            )
+            logger(
+                "Copy Module {} Version {} Require: \n{}".format(
+                    module_name, version_latest, version_require
+                )
+            )
+
+            # zip module
+            zip_from = f"./framer_modules/{module_name}"
+            zip_to = f"{version_base}/file.zip"
+            self.create_zip(
+                source_dir=zip_from,
+                zip_path=zip_to,
+                exclude_dirs=["__pycache__"],
+                exclude_files_startswith=["."],
+                exclude_hidden=True,
+            )
+
+    def create_zip(
+        self,
+        source_dir,
+        zip_path,
+        exclude_dirs=None,
+        exclude_files_startswith=None,
+        exclude_hidden=True,
+        compression=zipfile.ZIP_DEFLATED,
+    ):
+        # init exclude
+        exclude_dirs = exclude_dirs or []
+        exclude_files_startswith = exclude_files_startswith or []
+
+        # check target dir
+        os.makedirs(os.path.dirname(zip_path), exist_ok=True)
+
+        with zipfile.ZipFile(zip_path, "w", compression) as zf:
+            for root, dirs, files in os.walk(source_dir):
+                # process exclude dirs
+                dirs[:] = [
+                    d
+                    for d in dirs
+                    if not (
+                        (exclude_hidden and d.startswith("."))  # exclude hidden dir
+                        or (d in exclude_dirs)  # user specified exclude dir
+                    )
+                ]
+
+                # process exclude files
+                for file in files:
+                    if (exclude_hidden and file.startswith(".")) or any(
+                        file.startswith(p) for p in exclude_files_startswith
+                    ):
+                        continue
+
+                    file_path = os.path.join(root, file)
+                    arcname = os.path.relpath(file_path, source_dir)
+                    zf.write(file_path, arcname)
 
 
 # parsers
