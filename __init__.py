@@ -1,7 +1,11 @@
-def init(link_to=None, log_name="Framer", hook_error=False):
+def init(
+    link_to=None,
+    log_name="Framer",
+    hook_error=False,
+    redirect_output=False,
+):
 
     # python module import
-    import os
     import sys
     import types
     import functools
@@ -19,6 +23,11 @@ def init(link_to=None, log_name="Framer", hook_error=False):
 
     # enable error hook
     sys.excepthook = framer.helper.global_except_hook
+
+    # redirect output
+    if redirect_output != False:
+        init_logger("Stdout Link To: {}".format(redirect_output.__name__))
+        sys.stdout = framer.helper.CustomStdout(redirect_output)
 
     # load env
     if not framer.helper.no_env():

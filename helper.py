@@ -1,4 +1,5 @@
 import os
+import io
 import json
 
 
@@ -51,6 +52,16 @@ def global_except_hook(exc_type, exc_value, exc_traceback):
         "ErrHooker",
         "".join(traceback.format_exception(exc_type, exc_value, exc_traceback)),
     )
+
+
+class CustomStdout(io.TextIOBase):
+    def __init__(self, custom_output_handler: callable):
+        super().__init__()
+        self.custom_output_handler = custom_output_handler
+
+    def write(self, text):
+        self.custom_output_handler(text)
+        return len(text)
 
 
 def init_dir(path: str, remove: bool = False):
