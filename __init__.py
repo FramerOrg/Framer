@@ -44,7 +44,7 @@ def init(
             )
         )
 
-    # check modules
+    # check framerpkg and framer_modules
     init_logger("Checking modules...")
 
     if framer.helper.no_framerpkg():
@@ -56,15 +56,11 @@ def init(
         framer.helper.init_dir("./framer_modules")
     sys.path.append("./framer_modules")
 
-    # check module folders
-    installed_modules = framer.helper.load_installed_modules()
-    init_logger("Installed Modules: \n- {}".format("\n- ".join(installed_modules)))
-
     # check package config
     framerpkg = framer.helper.load_framerpkg()
 
-    all_modules = list(framerpkg["modules"].keys())
-    init_logger("All Modules: \n- {}".format("\n- ".join(all_modules)))
+    installed_modules = framerpkg["modules"]
+    init_logger("Installed Modules: \n- {}".format("\n- ".join(installed_modules)))
 
     disabled_modules = framerpkg["disable"]
     init_logger("Disabled Modules: \n- {}".format("\n- ".join(disabled_modules)))
@@ -103,38 +99,25 @@ def init(
         if m in disabled_modules:
             continue
 
-        # check dependencies
+        # load require
         require = framer.helper.load_require(m)
-        dep = require["dependencies"]
 
-        for d_name, d_version in dep.items():
+        # check dependencies
+        for dep in require["dependencies"]:
 
             # if dependency not installed
-            if d_name not in installed_modules:
-                raise ImportError(
-                    "Module {} require {} version {}, but {} not installed.".format(
-                        m, d_name, d_version, d_name
-                    )
-                )
-
-            # if dependency version not match
-            if d_version != installed_modules_info[d_name]["version"]:
-                raise ImportError(
-                    "Module {} require {} version {}, but {} version {} installed.".format(
-                        m,
-                        d_name,
-                        d_version,
-                        d_name,
-                        installed_modules_info[d_name]["version"],
-                    )
-                )
+            if dep not in installed_modules:
+                raise ImportError(f"Module {m} require {dep}, but {dep} not installed.")
 
             # check if dependency disabled
-            if d_name in disabled_modules:
+            if dep in disabled_modules:
+                raise ImportError(f"Module {m} require {dep}, but {dep} disabled.")
+
+        # check pip dependencies
+        for pip_dep in require["pip_dependencies"]:
+            if helper.no_pip_module(pip_dep):
                 raise ImportError(
-                    "Module {} require {} version {}, but {} disabled.".format(
-                        m, d_name, d_version, d_name
-                    )
+                    f"Module {m} require {pip_dep}, but {pip_dep} not installed."
                 )
 
         # import module

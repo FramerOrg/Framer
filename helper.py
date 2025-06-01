@@ -99,6 +99,14 @@ def no_env() -> bool:
     return False
 
 
+def no_pip_module(module_name: str) -> bool:
+    try:
+        __import__(module_name)
+        return False
+    except ImportError:
+        return True
+
+
 def load_env():
     with open("./env.json", "r", encoding="UTF-8") as f:
         return json.load(f)
