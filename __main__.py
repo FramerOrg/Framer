@@ -81,7 +81,7 @@ class InitProjectAction(argparse.Action):
             helper.write_file(
                 "./framerpkg.json",
                 helper.json_dump(
-                    {"modules": {}, "disable": [], "origins": [], "module_map": {}}
+                    {"modules": [], "disable": [], "origins": [], "module_map": {}}
                 ),
             )
         if helper.no_framer_modules():
