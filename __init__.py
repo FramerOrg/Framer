@@ -53,7 +53,7 @@ def init(
         )
 
     if framer.helper.no_framer_modules():
-        framer.helper.init_dir("./framer_modules")
+        framer.helper.clean_dir("./framer_modules")
     sys.path.append("./framer_modules")
 
     # check package config

@@ -94,7 +94,7 @@ class InitProjectAction(argparse.Action):
                 ),
             )
         if helper.no_framer_modules():
-            helper.init_dir("./framer_modules")
+            helper.clean_dir("./framer_modules")
         logger("Init Project Done")
 
 
@@ -123,13 +123,13 @@ class ModuleCLIAction(argparse.Action):
 class FramerUpdateAction(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
         logger("Update Framer...")
-        helper.init_dir("update_tmp")
+        helper.clean_dir("update_tmp")
         fetch_status = self.exec_command("git clone {} update_tmp".format(framer_repo))
         if fetch_status != 0:
             logger("Fetch Framer Failed")
-            helper.init_dir("update_tmp", remove=True)
+            helper.clean_dir("update_tmp", remove=True)
             return
-        helper.init_dir("Framer", remove=True)
+        helper.clean_dir("Framer", remove=True)
         os.rename("update_tmp", "Framer")
         logger("Update Framer Done")
 

@@ -64,7 +64,7 @@ class CustomStdout(io.TextIOBase):
         return len(text)
 
 
-def init_dir(path: str, remove: bool = False):
+def clean_dir(path: str, remove: bool = False):
     import shutil
 
     if os.path.exists(path):
