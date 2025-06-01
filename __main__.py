@@ -432,9 +432,8 @@ class OriginMakeAction(argparse.Action):
 
         # init maker dir
         base_dir = "./maker_release"
+        helper.clean_dir(base_dir)
         sys.path.append("./framer_modules")
-        if not os.path.exists(base_dir):
-            os.makedirs(base_dir)
 
         # load target modules
         modules = helper.load_installed_modules()
@@ -465,63 +464,27 @@ class OriginMakeAction(argparse.Action):
 
             # get module info
             moduleInfo = __import__(module_name).moduleInfo
-            logger(
-                "Module {} Info: \n{}".format(module_name, helper.json_dump(moduleInfo))
-            )
 
             # make module dir
             module_base = f"{base_dir}/{module_name}"
-            if not os.path.exists(module_base):
-                os.makedirs(module_base)
-
-            # latest version file
-            version_latest = moduleInfo["version"]
-            helper.write_file(f"{module_base}/latest.txt", version_latest)
-            logger(f"Module {module_name} Latest: {version_latest}")
-
-            # process module info
-            del moduleInfo["version"]
-            if os.path.exists(f"{module_base}/info.json"):
-                module_info = helper.json_load(
-                    helper.read_file(f"{module_base}/info.json")
-                )
-                if version_latest in module_info["versions"]:
-                    logger(f"Module {module_name} Version {version_latest} Exists")
-                    continue
-            else:
-                module_info = {**moduleInfo, "versions": []}
-            module_info["versions"].append(version_latest)
+            helper.clean_dir(module_base)
 
             # write module info
-            json_module_info = helper.json_dump(module_info)
+            json_module_info = helper.json_dump(moduleInfo)
             helper.write_file(f"{module_base}/info.json", json_module_info)
-            logger("Module {} Map: \n{}".format(module_name, json_module_info))
-
-            # process versions
-            logger(f"Process Module {module_name} Version {version_latest}")
-
-            # make version dir
-            version_base = f"{module_base}/{version_latest}"
-            if not os.path.exists(version_base):
-                os.makedirs(version_base)
+            logger("Module {} Info: \n{}".format(module_name, json_module_info))
 
             # copy version require
-            version_require = helper.read_file(
-                f"./framer_modules/{module_name}/require.json"
-            )
+            require = helper.json_dump(helper.load_require(module_name))
             helper.write_file(
-                f"{version_base}/require.json",
-                version_require,
+                f"{module_base}/require.json",
+                require,
             )
-            logger(
-                "Copy Module {} Version {} Require: \n{}".format(
-                    module_name, version_latest, version_require
-                )
-            )
+            logger("Copy Module {} Require: \n{}".format(module_name, require))
 
             # zip module
             zip_from = f"./framer_modules/{module_name}"
-            zip_to = f"{version_base}/file.zip"
+            zip_to = f"{module_base}/file.zip"
             self.create_zip(
                 source_dir=zip_from,
                 zip_path=zip_to,
