@@ -89,7 +89,6 @@ class InitProjectAction(argparse.Action):
                         ),
                         "disable": [],
                         "origins": [],
-                        "module_map": {},
                     }
                 ),
             )
@@ -351,6 +350,7 @@ class OriginListAction(argparse.Action):
 class OriginSyncAction(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
         framerpkg = helper.load_framerpkg()
+        origin_module_cache = {}
 
         # fetch origins
         for origin_url in framerpkg["origins"]:
@@ -359,47 +359,28 @@ class OriginSyncAction(argparse.Action):
 
             # fetch modules
             for module_name in origin_modules:
-                local_module_map = {}
 
+                # get module info
                 module_info = helper.json_load(
                     self.http_text_get(f"{origin_url}/{module_name}/info.json")
                 )
 
-                # readme.md
-                m_desc = module_info["description"]
-                if m_desc.startswith("@"):
-                    m_readme = m_desc[1:]
-                    m_desc = f"{origin_url}/{module_name}/{m_readme}"
-
                 local_module_name = "{}@{}".format(module_name, origin_map["name"])
-                local_module_map["author"] = module_info["author"]
-                local_module_map["description"] = m_desc
-                local_module_map["versions"] = {}
 
-                # latest version
-                version_latest = self.http_text_get(
-                    f"{origin_url}/{module_name}/latest.txt"
+                # fetch require
+                require = helper.json_load(
+                    self.http_text_get(f"{origin_url}/{module_name}/require.json")
                 )
-                local_module_map["latest"] = version_latest
-
-                # fetch versions
-                for version in module_info["versions"]:
-                    file_zip_url = f"{origin_url}/{module_name}/{version}/file.zip"
-                    version_require = helper.json_load(
-                        self.http_text_get(
-                            f"{origin_url}/{module_name}/{version}/require.json"
-                        )
-                    )
-                    local_module_map["versions"][version] = {
-                        "download": file_zip_url,
-                        "require": version_require,
-                    }
 
                 # save module map
-                framerpkg["module_map"][local_module_name] = local_module_map
+                origin_module_cache[local_module_name] = {
+                    **module_info,
+                    "download": f"{origin_url}/{module_name}/file.zip",
+                    "require": require,
+                }
 
         # save sync result
-        helper.write_file("./framerpkg.json", helper.json_dump(framerpkg))
+        helper.write_file("./origin-cache.json", helper.json_dump(origin_module_cache))
         logger("Sync Done")
 
     def http_text_get(self, url, retry=3):
