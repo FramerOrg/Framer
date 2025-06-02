@@ -576,17 +576,23 @@ class ModuleDelAction(argparse.Action):
 
 class ModuleSearchAction(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
+        result = self.search(helper.load_origin_cache(), values[0])
+
+        # show result
+        if len(result) > 0:
+            logger("Search Result: \n- {}".format("\n- ".join(result)))
+        else:
+            logger("Search Result: No Match")
+
+    @staticmethod
+    def search(module_cache, keyword):
 
         # sync module
         if helper.no_origin_cache():
             main_parser.parse_args(["origin", "--sync"])
 
-        # get module cache
-        keyword = values[0]
-        provider = ""
-        module_cache = helper.load_origin_cache()
-
         # get module provider
+        provider = ""
         if "@" in keyword:
             keyword, provider = keyword.split("@", 1)
 
@@ -602,12 +608,79 @@ class ModuleSearchAction(argparse.Action):
                     result.append(m)
                 if provider != "" and provider.lower() in m_provider.lower():
                     result.append(m)
+        return result
 
-        # show result
-        if len(result) > 0:
-            logger("Search Result: \n- {}".format("\n- ".join(result)))
-        else:
-            logger("Search Result: No Match")
+
+class ModuleInstallAction(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        module_name = values[0]
+        module_cache = helper.load_origin_cache()
+        search_list = ModuleSearchAction.search(module_cache, module_name)
+
+        # get target install
+        target_install = ""
+        if len(search_list) == 0:
+            logger(f"Module {module_name} Not Found")
+            return
+        if len(search_list) > 1:
+            logger(
+                "Module {} Found: \n- {}".format(module_name, "\n- ".join(search_list))
+            )
+            target_install = input("Install: ")
+        if target_install == "":
+            target_install = search_list[0]
+        logger(f"Install Module {target_install}...")
+
+        # make install dir
+        m_name = target_install.split("@")[0]
+        helper.clean_dir("./framer_download_cache")
+
+        # get file
+        status = self.http_file_get(
+            module_cache[target_install]["download"],
+            "./framer_download_cache/file.zip",
+        )
+        if status == False:
+            helper.clean_dir("./framer_download_cache", remove=True)
+            return
+
+        # extract file
+        helper.clean_dir(f"./framer_modules/{m_name}")
+        with zipfile.ZipFile("./framer_download_cache/file.zip", "r") as zf:
+            zf.extractall(f"./framer_modules/{m_name}")
+
+        # remove cache
+        helper.clean_dir("./framer_download_cache", remove=True)
+
+        # add to framerpkg
+        main_parser.parse_args(["module", "--sync-pkg"])
+        logger(f"Install Done")
+
+    def http_file_get(self, url: str, save_to: str, retry=3) -> bool:
+        logger(f"Fetch {url}")
+        while retry > 0:
+            try:
+                response = urllib.request.urlopen(
+                    urllib.request.Request(
+                        url,
+                        headers={
+                            "User-Agent": "Framer-CLI/1.0 (Official)",
+                            "Cache-Control": "no-cache",
+                            "Pragma": "no-cache",
+                        },
+                    )
+                )
+                with open(save_to, "wb") as f:
+                    f.write(response.read())
+                return True
+            except KeyboardInterrupt:
+                logger("KeyboardInterrupt, Stop Fetch...")
+                return False
+            except Exception:
+                logger(f"Fetch {url} Failed, Retry {retry}...")
+                retry -= 1
+        logger(f"Fetch {url} Failed")
+        return False
 
 
 # parsers
@@ -758,6 +831,14 @@ module_parser.add_argument(
     action=ModuleSearchAction,
     nargs=1,
     metavar="KEYWORD",
+)
+module_parser.add_argument(
+    "-i",
+    "--install",
+    help="Install Module",
+    action=ModuleInstallAction,
+    nargs=1,
+    metavar="MODULE",
 )
 main_subparsers = main_parser.add_subparsers(dest="subparsers")
 main_subparsers.add_parser("env", parents=[env_parser], add_help=False)
