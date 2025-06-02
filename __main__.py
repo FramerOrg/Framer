@@ -365,6 +365,7 @@ class OriginSyncAction(argparse.Action):
                     self.http_text_get(f"{origin_url}/{module_name}/info.json")
                 )
 
+                # make new module name
                 local_module_name = "{}@{}".format(module_name, origin_map["name"])
 
                 # fetch require
