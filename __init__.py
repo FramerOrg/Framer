@@ -59,7 +59,7 @@ def init(
     # check package config
     framerpkg = framer.helper.load_framerpkg()
 
-    installed_modules = framerpkg["modules"]
+    installed_modules = helper.load_installed_modules()
     init_logger("Installed Modules: \n- {}".format("\n- ".join(installed_modules)))
 
     disabled_modules = framerpkg["disable"]

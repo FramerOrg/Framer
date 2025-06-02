@@ -82,11 +82,7 @@ class InitProjectAction(argparse.Action):
                 "./framerpkg.json",
                 helper.json_dump(
                     {
-                        "modules": (
-                            helper.load_installed_modules()
-                            if not helper.no_framer_modules()
-                            else []
-                        ),
+                        "modules": [],
                         "disable": [],
                         "origins": [],
                     }
@@ -515,6 +511,69 @@ class OriginMakeAction(argparse.Action):
                     zf.write(file_path, arcname)
 
 
+class ModuleListAction(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        modules = helper.load_installed_modules()
+        logger("Installed Modules: \n- {}".format("\n- ".join(modules)))
+
+
+class SyncPackageAction(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+
+        # load installed modules
+        modules = helper.load_installed_modules()
+        logger("Sync Modules To Framerpkg...")
+
+        # load framerpkg
+        if helper.no_framerpkg():
+            main_parser.parse_args(["--init"])
+        framerpkg = helper.load_framerpkg()
+
+        # add modules
+        framerpkg["modules"] = modules
+        helper.write_file("./framerpkg.json", helper.json_dump(framerpkg))
+        logger("Sync Done")
+
+
+class ModuleInfoAction(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        sys.path.append("./framer_modules")
+        module_name = values[0]
+        module_info = __import__(module_name).moduleInfo
+        logger(f"Module {module_name} Info: \n{helper.json_dump(module_info)}")
+
+
+class ModuleEnableAction(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        module_name = values[0]
+        framerpkg = helper.load_framerpkg()
+        if module_name in framerpkg["disable"]:
+            framerpkg["disable"].remove(module_name)
+            helper.write_file("./framerpkg.json", helper.json_dump(framerpkg))
+        logger(f"Enable Module {module_name}")
+
+
+class ModuleDisableAction(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        module_name = values[0]
+        framerpkg = helper.load_framerpkg()
+        if module_name not in framerpkg["disable"]:
+            framerpkg["disable"].append(module_name)
+            helper.write_file("./framerpkg.json", helper.json_dump(framerpkg))
+        logger(f"Disable Module {module_name}")
+
+
+class ModuleDelAction(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        module_name = values[0]
+        logger(f"Delete Module {module_name}...")
+        modules = helper.load_installed_modules()
+        if module_name in modules:
+            helper.clean_dir(f"./framer_modules/{module_name}", remove=True)
+        main_parser.parse_args(["module", "--sync-pkg"])
+        logger(f"Delete Done")
+
+
 # parsers
 main_parser = LoggerParser(description="Framer CLI", add_help=False)
 main_parser.add_argument(
@@ -615,10 +674,52 @@ origin_parser.add_argument(
 origin_parser.add_argument(
     "--make", help="Make Origin", action=OriginMakeAction, nargs=0
 )
+module_parser = LoggerParser(prog="module", description="Framer CLI", add_help=False)
+module_parser.add_argument(
+    "-h", "--help", help="Show Help", action=ShowHelpAction, nargs=0
+)
+module_parser.add_argument(
+    "-l", "--list", help="List Modules", action=ModuleListAction, nargs=0
+)
+module_parser.add_argument(
+    "--sync-pkg",
+    help="Sync Installed Package To Framerpkg",
+    action=SyncPackageAction,
+    nargs=0,
+)
+module_parser.add_argument(
+    "--info",
+    help="Show Module Info",
+    action=ModuleInfoAction,
+    nargs=1,
+    metavar="MODULE",
+)
+module_parser.add_argument(
+    "--enable",
+    help="Enable Module",
+    action=ModuleEnableAction,
+    nargs=1,
+    metavar="MODULE",
+)
+module_parser.add_argument(
+    "--disable",
+    help="Disable Module",
+    action=ModuleDisableAction,
+    nargs=1,
+    metavar="MODULE",
+)
+module_parser.add_argument(
+    "--del",
+    help="Delete Module",
+    action=ModuleDelAction,
+    nargs=1,
+    metavar="MODULE",
+)
 main_subparsers = main_parser.add_subparsers(dest="subparsers")
 main_subparsers.add_parser("env", parents=[env_parser], add_help=False)
 main_subparsers.add_parser("runner", parents=[runner_parser], add_help=False)
 main_subparsers.add_parser("origin", parents=[origin_parser], add_help=False)
+main_subparsers.add_parser("module", parents=[module_parser], add_help=False)
 
 
 # show help if no arguments

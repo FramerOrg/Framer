@@ -87,6 +87,14 @@ def no_framerpkg() -> bool:
     return False
 
 
+def no_origin_cache() -> bool:
+    if not os.path.exists("./origin-cache.json") or not os.path.isfile(
+        "./origin-cache.json"
+    ):
+        return True
+    return False
+
+
 def no_framer_modules() -> bool:
     if not os.path.exists("./framer_modules") or not os.path.isdir("./framer_modules"):
         return True
@@ -114,6 +122,11 @@ def load_env():
 
 def load_framerpkg():
     with open("./framerpkg.json", "r", encoding="UTF-8") as f:
+        return json.load(f)
+
+
+def load_origin_cache():
+    with open("./origin-cache.json", "r", encoding="UTF-8") as f:
         return json.load(f)
 
 
