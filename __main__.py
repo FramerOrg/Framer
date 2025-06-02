@@ -683,6 +683,23 @@ class ModuleInstallAction(argparse.Action):
         return False
 
 
+class ModuleSyncBackAction(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        framerpkg = helper.load_framerpkg()
+        module_list = framerpkg["modules"]
+
+        # check framer_modules
+        if helper.no_framer_modules():
+            helper.clean_dir("./framer_modules")
+
+        # sync origin cache
+        main_parser.parse_args(["origin", "--sync"])
+
+        # install modules
+        for module_name in module_list:
+            main_parser.parse_args(["module", "--install", module_name])
+
+
 # parsers
 main_parser = LoggerParser(description="Framer CLI", add_help=False)
 main_parser.add_argument(
@@ -839,6 +856,9 @@ module_parser.add_argument(
     action=ModuleInstallAction,
     nargs=1,
     metavar="MODULE",
+)
+module_parser.add_argument(
+    "--sync-back", help="Sync Package Back", action=ModuleSyncBackAction, nargs=0
 )
 main_subparsers = main_parser.add_subparsers(dest="subparsers")
 main_subparsers.add_parser("env", parents=[env_parser], add_help=False)
