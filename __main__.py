@@ -654,6 +654,11 @@ class ModuleInstallAction(argparse.Action):
 
         # add to framerpkg
         main_parser.parse_args(["module", "--sync-pkg"])
+
+        # scan dependencies
+        require = module_cache[target_install]["require"]["dependencies"]
+        for r in require:
+            main_parser.parse_args(["module", "--install", r])
         logger(f"Install Done")
 
     def http_file_get(self, url: str, save_to: str, retry=3) -> bool:
