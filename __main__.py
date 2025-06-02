@@ -574,6 +574,42 @@ class ModuleDelAction(argparse.Action):
         logger(f"Delete Done")
 
 
+class ModuleSearchAction(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+
+        # sync module
+        if helper.no_origin_cache():
+            main_parser.parse_args(["origin", "--sync"])
+
+        # get module cache
+        keyword = values[0]
+        provider = ""
+        module_cache = helper.load_origin_cache()
+
+        # get module provider
+        if "@" in keyword:
+            keyword, provider = keyword.split("@", 1)
+
+        # get module list
+        module_list = list(module_cache.keys())
+
+        # search module
+        result = []
+        for m in module_list:
+            m_keyword, m_provider = m.split("@", 1)
+            if keyword.lower() in m_keyword.lower() and m not in result:
+                if provider == "":
+                    result.append(m)
+                if provider != "" and provider.lower() in m_provider.lower():
+                    result.append(m)
+
+        # show result
+        if len(result) > 0:
+            logger("Search Result: \n- {}".format("\n- ".join(result)))
+        else:
+            logger("Search Result: No Match")
+
+
 # parsers
 main_parser = LoggerParser(description="Framer CLI", add_help=False)
 main_parser.add_argument(
@@ -714,6 +750,14 @@ module_parser.add_argument(
     action=ModuleDelAction,
     nargs=1,
     metavar="MODULE",
+)
+module_parser.add_argument(
+    "-s",
+    "--search",
+    help="Search Module",
+    action=ModuleSearchAction,
+    nargs=1,
+    metavar="KEYWORD",
 )
 main_subparsers = main_parser.add_subparsers(dest="subparsers")
 main_subparsers.add_parser("env", parents=[env_parser], add_help=False)
