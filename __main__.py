@@ -21,12 +21,17 @@ framer_repo = "https://github.com/runoneall/Framer.git"
 logger = functools.partial(helper.logger, "CLI")
 sys.excepthook = helper.global_except_hook
 
-# init runner
+# init runner config
 runner_config = {
     "exit_on_finish": False,
     "restart_on_error": False,
     "restart_sleep": 1,
     "restart_on_file_change": False,
+}
+
+# init install config
+install_config = {
+    "overwrite": False,
 }
 
 
@@ -611,10 +616,17 @@ class ModuleSearchAction(argparse.Action):
         return result
 
 
+class ModuleInstallConfigAction(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        if option_string == "--overwrite":
+            install_config["overwrite"] = True
+
+
 class ModuleInstallAction(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
         module_name = values[0]
         module_cache = helper.load_origin_cache()
+        installed_modules = helper.load_installed_modules()
         search_list = ModuleSearchAction.search(module_cache, module_name)
 
         # get target install
@@ -629,7 +641,16 @@ class ModuleInstallAction(argparse.Action):
             target_install = input("Install: ")
         if target_install == "":
             target_install = search_list[0]
+        target_install_name = target_install.split("@")[0]
         logger(f"Install Module {target_install}...")
+
+        # check module exist
+        if (
+            target_install_name in installed_modules
+            and install_config["overwrite"] == False
+        ):
+            logger("Module Already Installed, Use --overwrite To Reinstall")
+            return
 
         # make install dir
         m_name = target_install.split("@")[0]
@@ -901,6 +922,12 @@ module_parser.add_argument(
     action=ModuleSearchAction,
     nargs=1,
     metavar="KEYWORD",
+)
+module_parser.add_argument(
+    "--overwrite",
+    help="Install Module and Override Old",
+    action=ModuleInstallConfigAction,
+    nargs=0,
 )
 module_parser.add_argument(
     "-i",
