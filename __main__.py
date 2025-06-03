@@ -736,6 +736,7 @@ from .module import moduleMain
             """class moduleMain:
     def __init__(self, framer, logger):
         self.framer = framer
+        self.logger = logger
 """,
         )
 
