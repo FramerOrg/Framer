@@ -735,7 +735,7 @@ from .module import moduleMain
             f"./framer_modules/{name}/module.py",
             """class moduleMain:
     def __init__(self, framer, logger):
-        pass
+        self.framer = framer
 """,
         )
 
