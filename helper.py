@@ -1,14 +1,14 @@
 import os
 import io
 import json
+import time
+import traceback
+import shutil
+import textwrap
 
 
 def logger(from_module: str, message: str, max_width: int = None):
-    import time
-
     def format_with_wrap(msg: str, width: int):
-        import textwrap
-
         result = []
         for line in msg.splitlines(keepends=True):
             if len(line.strip()) == 0 or len(line) <= width:
@@ -46,8 +46,6 @@ def logger(from_module: str, message: str, max_width: int = None):
 
 
 def global_except_hook(exc_type, exc_value, exc_traceback):
-    import traceback
-
     logger(
         "ErrHooker",
         "".join(traceback.format_exception(exc_type, exc_value, exc_traceback)),
@@ -65,8 +63,6 @@ class CustomStdout(io.TextIOBase):
 
 
 def clean_dir(path: str, remove: bool = False):
-    import shutil
-
     if os.path.exists(path):
         shutil.rmtree(path)
     if not remove:
