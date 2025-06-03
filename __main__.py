@@ -705,6 +705,53 @@ class ModuleSyncBackAction(argparse.Action):
             main_parser.parse_args(["module", "--install", module_name])
 
 
+class ModuleCreateAction(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+
+        # init module dir
+        name = values[0]
+        logger(f"Create Module {name}...")
+        installed_modules = helper.load_installed_modules()
+        if name in installed_modules:
+            logger(f"Module {name} Already Exists")
+            return
+        helper.clean_dir(f"./framer_modules/{name}")
+
+        # create __init__.py
+        helper.write_file(
+            f"./framer_modules/{name}/__init__.py",
+            """moduleInfo = {
+    "author": "your name",
+    "description": "your description here",
+    "hooker": False,
+}
+
+from .module import moduleMain
+""",
+        )
+
+        # create module.py
+        helper.write_file(
+            f"./framer_modules/{name}/module.py",
+            """class moduleMain:
+    def __init__(self, framer, logger):
+        pass
+""",
+        )
+
+        # create require.json
+        helper.write_file(
+            f"./framer_modules/{name}/require.json",
+            helper.json_dump(
+                {"dependencies": [], "option_dependencies": [], "pip_dependencies": []}
+            ),
+        )
+
+        # add to framerpkg
+        main_parser.parse_args(["module", "--sync-pkg"])
+        logger(f"Create Done")
+
+
 # parsers
 main_parser = LoggerParser(description="Framer CLI", add_help=False)
 main_parser.add_argument(
@@ -864,6 +911,13 @@ module_parser.add_argument(
 )
 module_parser.add_argument(
     "--sync-back", help="Sync Package Back", action=ModuleSyncBackAction, nargs=0
+)
+module_parser.add_argument(
+    "--create",
+    help="Create Empty Framer Modules",
+    action=ModuleCreateAction,
+    nargs=1,
+    metavar="NAME",
 )
 main_subparsers = main_parser.add_subparsers(dest="subparsers")
 main_subparsers.add_parser("env", parents=[env_parser], add_help=False)
