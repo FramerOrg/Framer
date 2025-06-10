@@ -161,6 +161,7 @@ class EnvSetAction(argparse.Action):
         value = self.parse_env_value(values[1])
         if helper.no_env():
             logger("No Env File, Use --init First")
+            return
         env = helper.load_env()
 
         # write env file
