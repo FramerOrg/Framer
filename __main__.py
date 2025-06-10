@@ -181,7 +181,7 @@ class EnvSetAction(argparse.Action):
                 return value.lower() == "true"
             else:
                 logger(f"Invalid value type: {value_type}")
-                return value
+                return f"{value_type}:{value}"
 
 
 class EnvDelAction(argparse.Action):
