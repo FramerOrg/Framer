@@ -159,6 +159,8 @@ class EnvSetAction(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
         key = values[0]
         value = self.parse_env_value(values[1])
+        if helper.no_env():
+            logger("No Env File, Use --init First")
         env = helper.load_env()
 
         # write env file
