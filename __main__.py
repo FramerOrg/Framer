@@ -15,7 +15,7 @@ from . import helper
 python = sys.executable
 
 # framer repo
-framer_repo = "https://github.com/runoneall/Framer.git"
+framer_repo = "https://github.com/Framer/Framer.git"
 
 # CLI init
 logger = functools.partial(helper.logger, "CLI")
