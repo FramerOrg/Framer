@@ -135,10 +135,8 @@ def init(
 
     # return framer
     init_logger("Framer Init Complete!")
-    if framer.link_to is None:
-        return framer
-    else:
+    if framer.link_to is not None:
         for attr in dir(framer):
             if not attr.startswith("__"):
                 sys.modules[framer.link_to].__dict__[attr] = getattr(framer, attr)
-        return framer
+    return framer
