@@ -113,13 +113,6 @@ def init(
             if dep in disabled_modules:
                 raise ImportError(f"Module {m} require {dep}, but {dep} disabled.")
 
-        # check pip dependencies
-        for pip_dep in require["pip_dependencies"]:
-            if helper.no_pip_module(pip_dep):
-                raise ImportError(
-                    f"Module {m} require {pip_dep}, but {pip_dep} not installed."
-                )
-
         # import module
         init_logger(f"Importing module {m}...")
         m_obj = __import__(m)
