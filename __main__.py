@@ -48,6 +48,18 @@ class ShowHelpAction(argparse.Action):
         logger(parser.format_help())
 
 
+class OpenShellAction(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        while True:
+            command = input("Framer> ")
+            if command.lower() == "exit":
+                break
+            try:
+                main_parser.parse_args(command.split())
+            except:
+                pass
+
+
 class TestFramerAction(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
         logger("Testing Framer...")
@@ -784,6 +796,9 @@ main_parser.add_argument(
 )
 main_parser.add_argument(
     "-v", "--version", help="Show Version", action="version", version="1.0 (Official)"
+)
+main_parser.add_argument(
+    "--shell", help="Open Framer Shell", action=OpenShellAction, nargs=0
 )
 main_parser.add_argument(
     "-t", "--test", help="Test Framer", action=TestFramerAction, nargs=0
