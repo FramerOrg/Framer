@@ -2,15 +2,14 @@ import os
 import sys
 import typing
 
+from . import logger, errhook, stdhook, filecheck, env, creator, fileloader, pointer
+
 
 def init(
     log_name: str = "Framer",
     hook_error: bool = False,
     redirect_output: typing.Union[typing.Callable[[str], None], bool] = False,
-):
-
-    # local module import
-    from . import logger, errhook, stdhook, filecheck, env, creator, fileloader, pointer
+) -> pointer.Pointer:
 
     # create framer
     framer = pointer.Pointer()
@@ -118,6 +117,7 @@ def init(
         # add module to framer
         setattr(moduleMain, "moduleInfo", module.moduleInfo)
         setattr(framer, name, moduleMain)
+        return moduleMain
 
     # add lazy_load_module to framer
     framer.__getattr__ = lazy_load_module
